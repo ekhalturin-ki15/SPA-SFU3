@@ -1,11 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MyBuildGraph.h"
+#include "Kismet/GameplayStatics.h"
 #include "Misc/Paths.h"
 #include "MyGameModeBase.h"
 
 // Sets default values for this component's properties
-UMyBuildGraph::UMyBuildGraph()
+UMyBuildGraph::UMyBuildGraph() : iScale(10), iHowManyLable(20)
 {
     // Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
     // off to improve performance if you don't need them.
@@ -21,11 +22,10 @@ void UMyBuildGraph::BeginPlay()
     AMyGameModeBase* GM = GetWorld()->GetAuthGameMode<AMyGameModeBase>();
     if (!GM) return;
 
-
     FString sFilePath = FPaths::ProjectContentDir();
     {
-        FString  sFileContent;
-        FString  sLablePath   = sFilePath;
+        FString sFileContent;
+        FString sLablePath = sFilePath;
         sLablePath += L"/Label.csv";
         if (GM->LoadFileCP1251(sLablePath, sFileContent))
         {
@@ -40,26 +40,27 @@ void UMyBuildGraph::BeginPlay()
                 ++Y;
                 if (Y == 0) continue;    // Ќе считываем заголовок
 
-                UE_LOG(LogTemp, Log, TEXT("%s"), *sLine);
-                UE_LOG(LogTemp, Log, TEXT("%s"), *GM->sStringParse);
+                //UE_LOG(LogTemp, Log, TEXT("%s"), *sLine);
+                //UE_LOG(LogTemp, Log, TEXT("%s"), *GM->sStringParse);
                 TArray<FString> sCells;
                 sLine.ParseIntoArray(sCells, *GM->sStringParse, true);
 
-                int         iNum = -1;
-                int         id   = FCString::Atoi(*sCells[++iNum]);
+                int iNum = -1;
+                int id   = FCString::Atoi(*sCells[++iNum]);
 
-                mapLableGraph.FindOrAdd(id).sLabel = sCells[++iNum];
-                mapLableGraph.FindOrAdd(id).fWeight = FCString::Atof(*sCells[++iNum]);
-                mapLableGraph.FindOrAdd(id).sTag    = sCells[++iNum];
-                mapLableGraph.FindOrAdd(id).iCourse  = FCString::Atoi(*sCells[++iNum]);
-                mapLableGraph.FindOrAdd(id).sComp   = sCells[++iNum];
-                mapLableGraph.FindOrAdd(id).iCountComp  = FCString::Atoi(*sCells[++iNum]);
-                mapLableGraph.FindOrAdd(id).fNormWeight = FCString::Atof(*sCells[++iNum]);
-                mapLableGraph.FindOrAdd(id).X           = FCString::Atoi(*sCells[++iNum]);
-                mapLableGraph.FindOrAdd(id).Y           = FCString::Atoi(*sCells[++iNum]);
-                mapLableGraph.FindOrAdd(id).Z           = FCString::Atoi(*sCells[++iNum]);
-                mapLableGraph.FindOrAdd(id).Color       = GM->StringToColor(sCells[++iNum]);
-
+                FString& sText = mapLableGraph.FindOrAdd(id).sLabel = sCells[++iNum];
+                mapLableGraph.FindOrAdd(id).dWeight                 = FCString::Atof(*sCells[++iNum]);
+                mapLableGraph.FindOrAdd(id).sTag                    = sCells[++iNum];
+                mapLableGraph.FindOrAdd(id).iCourse                 = FCString::Atoi(*sCells[++iNum]);
+                mapLableGraph.FindOrAdd(id).sComp                   = sCells[++iNum];
+                mapLableGraph.FindOrAdd(id).iCountComp              = FCString::Atoi(*sCells[++iNum]);
+                float dWeight = mapLableGraph.FindOrAdd(id).dNormWeight = FCString::Atof(*sCells[++iNum]);
+                mapLableGraph.FindOrAdd(id).vPos.X                      = FCString::Atoi(*sCells[++iNum]);
+                mapLableGraph.FindOrAdd(id).vPos.Y                      = FCString::Atoi(*sCells[++iNum]);
+                mapLableGraph.FindOrAdd(id).vPos.Z                      = FCString::Atoi(*sCells[++iNum]);
+                FVector& vPos                                           = mapLableGraph.FindOrAdd(id).vPos;
+                FColor&  fColor = mapLableGraph.FindOrAdd(id).fColor = GM->StringToColor(sCells[++iNum]);
+                //DrawText(sText, vPos, fColor, dWeight);
             }
         }
         else
@@ -90,12 +91,20 @@ void UMyBuildGraph::BeginPlay()
                 FRibGraph fRowGraph;
                 int       iNum = -1;
 
-                mapRibGraph.FindOrAdd(Y).L          = FCString::Atoi(*sCells[++iNum]);
-                mapRibGraph.FindOrAdd(Y).R          = FCString::Atoi(*sCells[++iNum]);
+                int& L = mapRibGraph.FindOrAdd(Y).L = FCString::Atoi(*sCells[++iNum]);
+                int& R = mapRibGraph.FindOrAdd(Y).R = FCString::Atoi(*sCells[++iNum]);
                 mapRibGraph.FindOrAdd(Y).sType      = sCells[++iNum];
                 mapRibGraph.FindOrAdd(Y).sLabel     = sCells[++iNum];
-                mapRibGraph.FindOrAdd(Y).fWeight    = FCString::Atof(*sCells[++iNum]);
+                float& fWeight = mapRibGraph.FindOrAdd(Y).fWeight = FCString::Atof(*sCells[++iNum]);
 
+                DrawDebugLine(GetWorld(),
+                              mapLableGraph[L].vPos,
+                              mapLableGraph[R].vPos,
+                              mapLableGraph[L].fColor,
+                              true,
+                              0.f,
+                              0,
+                              fWeight * iScale);
             }
         }
         else
@@ -103,11 +112,10 @@ void UMyBuildGraph::BeginPlay()
             UE_LOG(LogTemp, Error, L"Failed to load Rib.csv");
         }
 
-        arrLableGraph.SetNum(mapLableGraph.Num()); 
+        arrLableGraph.SetNum(mapLableGraph.Num());
         for (const auto& [Key, Value] : mapLableGraph)
         {
-            if (arrLableGraph.Num() <= Key) 
-                UE_LOG(LogTemp, Error, L"Bad index arrLableGraph");
+            if (arrLableGraph.Num() <= Key) UE_LOG(LogTemp, Error, L"Bad index arrLableGraph");
             arrLableGraph[Key] = Value;
         }
 
@@ -121,32 +129,68 @@ void UMyBuildGraph::BeginPlay()
             }
             arrRibGraph[Key] = Value;
         }
-
     }
 
     AfterBeginPlay();
-    /*FString FileDataTablePath = FilePath;
-    UDataTable* MyTable = LoadObject<UDataTable>(nullptr, L"/Game/New/Data/FRowGraph.FRowGraph");
+}
 
-    if (MyTable)
+void UMyBuildGraph::DrawText(const FString& sText, const FVector& vPos, const FColor& fColor, const float& dWeight)
+{
+    DrawDebugString(GetWorld(),
+                    vPos,
+                    sText,    // текст
+                    nullptr,
+                    fColor,
+                    9999999.0f,    // врем€ жизни (сек)
+                    true
+                    );
+
+    // ƒл€ видимости
+    //DrawDebugString(GetWorld(),
+    //                vPos,
+    //                sText,    // текст
+    //                nullptr,
+    //                FColor::Black,
+    //                9999999.0f,    // врем€ жизни (сек)
+    //                true,
+    //                dWeight / 2.f);
+}
+
+void UMyBuildGraph::ReShaderText()
+{
+    APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+    if (PC)
     {
-        static const FString ContextString(TEXT("My Context"));
-        TArray<FRowGraph*>   AllRows;
-        MyTable->GetAllRows<FRowGraph>(ContextString, AllRows);
-
-        for (auto* Row : AllRows)
+        APawn* PlayerPawn = PC->GetPawn();
+        if (PlayerPawn)
         {
-            UE_LOG(LogTemp, Log, TEXT("X: %d, Y: %d, Z: %d, "), Row->X, Row->Y, Row->Z);
-        }
-    }*/
+            FVector vLoc = PlayerPawn->GetActorLocation();
 
-    // ...
+            TArray<TPair<FVector, int>> arrSortLableDist;
+
+            int i = -1;
+            for (const auto& fLable : arrLableGraph)
+            {
+                ++i;
+                TPair<FVector, int> fNew(fLable.vPos - vLoc, i);
+                arrSortLableDist.Add(fNew);
+            }
+            arrSortLableDist.Sort([](const TPair<FVector, int>& L, const TPair<FVector, int>& R) 
+                { return L.Key.Length() < R.Key.Length(); });
+
+            for (i = 0; i < iHowManyLable; ++i)
+            {
+                const auto& fLab = arrLableGraph[i];
+                DrawText(fLab.sLabel, fLab.vPos, fLab.fColor, fLab.dWeight);
+            }
+        }
+    }
 }
 
 //// Called every frame
-//void UMyBuildGraph::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+// void UMyBuildGraph::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 //{
-//    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+//     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 //
-//    // ...
-//}
+//     // ...
+// }

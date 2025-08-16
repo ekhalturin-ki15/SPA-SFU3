@@ -15,7 +15,7 @@ struct FLableGraph : public FTableRowBase
     FString sLabel;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float fWeight;
+    float dWeight;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FString sTag;
@@ -30,19 +30,13 @@ struct FLableGraph : public FTableRowBase
     int iCountComp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float fNormWeight;
+    float dNormWeight;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    int X;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    int Y;
+    FVector vPos;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    int Z;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FColor Color;
+	FColor fColor;
 };
 
 
@@ -81,13 +75,24 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "MyArray")
     TArray<FRibGraph> arrRibGraph;
-   
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Params")
+    int iScale;
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Params")
+    int iHowManyLable;
+    
 	UFUNCTION(BlueprintImplementableEvent, Category = "Function")
     void AfterBeginPlay();
+
+	UFUNCTION(BlueprintCallable, Category = "Function")
+    void ReShaderText();
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
+	void DrawText(const FString& sText, const FVector& vPos, const FColor& fColor, const float& dWeight);
 
 
 private:
