@@ -76,10 +76,15 @@ public:
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "MyArray")
     TArray<FRibGraph> arrRibGraph;
 
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Params")
-    int iScale;
+	//Для каких вершин выводим надписи
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "MyArray")
+    TArray<int> arrOutLabel;
 
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Params")
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Params")
+    float dScaleRib;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Params")
     int iHowManyLable;
     
 	UFUNCTION(BlueprintImplementableEvent, Category = "Function")
@@ -92,8 +97,7 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	void DrawText(const FString& sText, const FVector& vPos, const FColor& fColor, const float& dWeight);
-
+	//void DrawText(const FString& sText, const FVector& vPos, const FColor& fColor, const float& dWeight);
 
 private:
     TMap<int, FLableGraph> mapLableGraph;

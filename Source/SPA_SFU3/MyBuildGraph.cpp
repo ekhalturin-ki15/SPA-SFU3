@@ -6,7 +6,7 @@
 #include "MyGameModeBase.h"
 
 // Sets default values for this component's properties
-UMyBuildGraph::UMyBuildGraph() : iScale(10), iHowManyLable(20)
+UMyBuildGraph::UMyBuildGraph() : dScaleRib(1), iHowManyLable(20)
 {
     // Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
     // off to improve performance if you don't need them.
@@ -40,8 +40,8 @@ void UMyBuildGraph::BeginPlay()
                 ++Y;
                 if (Y == 0) continue;    // Ќе считываем заголовок
 
-                //UE_LOG(LogTemp, Log, TEXT("%s"), *sLine);
-                //UE_LOG(LogTemp, Log, TEXT("%s"), *GM->sStringParse);
+                // UE_LOG(LogTemp, Log, TEXT("%s"), *sLine);
+                // UE_LOG(LogTemp, Log, TEXT("%s"), *GM->sStringParse);
                 TArray<FString> sCells;
                 sLine.ParseIntoArray(sCells, *GM->sStringParse, true);
 
@@ -60,7 +60,7 @@ void UMyBuildGraph::BeginPlay()
                 mapLableGraph.FindOrAdd(id).vPos.Z                      = FCString::Atoi(*sCells[++iNum]);
                 FVector& vPos                                           = mapLableGraph.FindOrAdd(id).vPos;
                 FColor&  fColor = mapLableGraph.FindOrAdd(id).fColor = GM->StringToColor(sCells[++iNum]);
-                //DrawText(sText, vPos, fColor, dWeight);
+                // DrawText(sText, vPos, fColor, dWeight);
             }
         }
         else
@@ -104,7 +104,7 @@ void UMyBuildGraph::BeginPlay()
                               true,
                               0.f,
                               0,
-                              fWeight * iScale);
+                              fWeight * dScaleRib);
             }
         }
         else
@@ -133,34 +133,35 @@ void UMyBuildGraph::BeginPlay()
 
     AfterBeginPlay();
 }
-
-void UMyBuildGraph::DrawText(const FString& sText, const FVector& vPos, const FColor& fColor, const float& dWeight)
-{
-    DrawDebugString(GetWorld(),
-                    vPos,
-                    sText,    // текст
-                    nullptr,
-                    fColor,
-                    9999999.0f,    // врем€ жизни (сек)
-                    true
-                    );
-
-    // ƒл€ видимости
-    //DrawDebugString(GetWorld(),
-    //                vPos,
-    //                sText,    // текст
-    //                nullptr,
-    //                FColor::Black,
-    //                9999999.0f,    // врем€ жизни (сек)
-    //                true,
-    //                dWeight / 2.f);
-}
+//
+// void UMyBuildGraph::DrawText(const FString& sText, const FVector& vPos, const FColor& fColor, const float& dWeight)
+//{
+//    DrawDebugString(GetWorld(),
+//                    vPos,
+//                    sText,    // текст
+//                    nullptr,
+//                    fColor,
+//                    9999999.0f,    // врем€ жизни (сек)
+//                    true
+//                    );
+//
+//    // ƒл€ видимости
+//    //DrawDebugString(GetWorld(),
+//    //                vPos,
+//    //                sText,    // текст
+//    //                nullptr,
+//    //                FColor::Black,
+//    //                9999999.0f,    // врем€ жизни (сек)
+//    //                true,
+//    //                dWeight / 2.f);
+//}
 
 void UMyBuildGraph::ReShaderText()
 {
     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
     if (PC)
     {
+        arrOutLabel.Empty();
         APawn* PlayerPawn = PC->GetPawn();
         if (PlayerPawn)
         {
@@ -175,17 +176,47 @@ void UMyBuildGraph::ReShaderText()
                 TPair<FVector, int> fNew(fLable.vPos - vLoc, i);
                 arrSortLableDist.Add(fNew);
             }
-            arrSortLableDist.Sort([](const TPair<FVector, int>& L, const TPair<FVector, int>& R) 
-                { return L.Key.Length() < R.Key.Length(); });
+            arrSortLableDist.Sort([](const TPair<FVector, int>& L, const TPair<FVector, int>& R)
+                                  { return L.Key.Length() < R.Key.Length(); });
 
             for (i = 0; i < iHowManyLable; ++i)
             {
-                const auto& fLab = arrLableGraph[i];
-                DrawText(fLab.sLabel, fLab.vPos, fLab.fColor, fLab.dWeight);
+                arrOutLabel.Add(arrSortLableDist[i].Value);
             }
         }
     }
 }
+
+// void UMyBuildGraph::ReShaderText()
+//{
+//     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+//     if (PC)
+//     {
+//         APawn* PlayerPawn = PC->GetPawn();
+//         if (PlayerPawn)
+//         {
+//             FVector vLoc = PlayerPawn->GetActorLocation();
+//
+//             TArray<TPair<FVector, int>> arrSortLableDist;
+//
+//             int i = -1;
+//             for (const auto& fLable : arrLableGraph)
+//             {
+//                 ++i;
+//                 TPair<FVector, int> fNew(fLable.vPos - vLoc, i);
+//                 arrSortLableDist.Add(fNew);
+//             }
+//             arrSortLableDist.Sort([](const TPair<FVector, int>& L, const TPair<FVector, int>& R)
+//                 { return L.Key.Length() < R.Key.Length(); });
+//
+//             for (i = 0; i < iHowManyLable; ++i)
+//             {
+//                 const auto& fLab = arrLableGraph[i];
+//                 DrawText(fLab.sLabel, fLab.vPos, fLab.fColor, fLab.dWeight);
+//             }
+//         }
+//     }
+// }
 
 //// Called every frame
 // void UMyBuildGraph::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
